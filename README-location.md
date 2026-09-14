@@ -138,7 +138,7 @@ Altitude: XX metros
 
 ---
 
-## ✅ Conclusão
+## Conclusão
 
 A biblioteca `expo-location` facilita o acesso aos recursos de localização em aplicações React Native desenvolvidas com Expo.
 
