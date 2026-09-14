@@ -1,103 +1,158 @@
 # Documentação: Status de Rede no Expo (expo-network)
 
-Este documento detalha o uso da biblioteca expo-network para monitorar a conexão com a internet, identificando se o dispositivo está conectado via Wi-Fi ou Dados Móveis.
+## Sobre a biblioteca
+
+A biblioteca **Expo Network** permite consultar informações relacionadas à conexão de rede do dispositivo em aplicações React Native utilizando Expo.
+
+Neste projeto, ela foi utilizada para verificar o estado da conexão do dispositivo e identificar informações como o **tipo de conexão** e se o dispositivo está conectado a uma rede.
+
+---
+
+## Tecnologias utilizadas
+
+* React Native
+* Expo
+* JavaScript
+* Visual Studio Code
+* Android Studio
+* Expo Network
+
+---
 
 ## 1. Instalação
 
-A biblioteca foi adicionada ao projeto através do comando:
+Para utilizar a biblioteca no projeto, foi utilizado o comando:
+
 ```bash
 npx expo install expo-network
 ```
 
-## 2. Sobre a Biblioteca (expo-network)
+---
 
-Ela permite que a aplicação identifique em tempo real se o aparelho está online, se a conexão ativa é Wi-Fi ou Dados Móveis, qual é o endereço IP atribuído e se o Modo Avião está ativado.
+## 2. Importação
 
-### Principais Recursos Utilizados no Projeto
+Depois da instalação, a biblioteca foi importada utilizando:
 
-* **Network.getNetworkStateAsync()**: Retorna um objeto contendo o estado da rede, incluindo o tipo de interface ativa (WIFI, CELLULAR, UNKNOWN) e a confirmação de alcance à internet (isInternetReachable).
-* **Network.getIpAddressAsync()**: Obtém o endereço IP atual do dispositivo na rede em que está conectado.
-* **Network.isAirplaneModeEnabledAsync()**: Verifica se o Modo Avião está ativado no sistema operacional (suportado em dispositivos Android).
-* **Network.addNetworkStateListener()**: Registra um ouvinte (listener) em tempo real que detecta alterações na conexão (ex: quando o Wi-Fi cai ou o usuário liga o Modo Avião) e atualiza a interface automaticamente.
-
-
-## 3. Código de Exemplo 
 ```javascript
+import * as Network from 'expo-network';
+```
 
-export default function RedesWifiScreen() {
-    const [info, setInfo] = useState(null);
-    const [errorMsg, setErrorMsg] = useState(null);
-    const [loading, setLoading] = useState(false);
+Dessa forma, podemos utilizar os métodos disponibilizados pela biblioteca através do objeto `Network`.
 
-    // Função assíncrona responsável por buscar as informações de rede do dispositivo
-    const carregaRede = useCallback(async () => { 
-        setLoading(true);
-        setErrorMsg(null);
+## 3. Verificando o estado da conexão
 
-        try {
-            // Obtém o estado geral da rede (conectado, Wi-Fi, dados móveis, etc.)
-            const stateWifi = await Network.getNetworkStateAsync();
+Para verificar o estado atual da conexão de rede, foi utilizado:
 
-            let ip = "Indisponível";
-            let airplane = false;
+```javascript
+const estado = await Network.getNetworkStateAsync();
+```
 
-            // Busca do endereço IP com tratamento de erro isolado
-            try {
-                ip = await Network.getIpAddressAsync();
-            } catch (error) {
-                ip = "Indisponível";
-            }
+O método retorna informações sobre a conexão atual do dispositivo.
 
-            // Verificação do modo avião com tratamento de erro isolado
-            try {
-                airplane = await Network.isAirplaneModeEnabledAsync();
-            } catch (error) {
-                airplane = false;
-            }
+Podemos verificar, por exemplo, se o dispositivo está conectado:
 
-            // Atualiza o estado central da tela
-            setInfo({
-                type: stateWifi.type ?? Network.NetworkStateType.UNKNOWN,
-                isConnected: stateWifi.isConnected ?? false,
-                isInternetReachable: stateWifi.isInternetReachable ?? false,
-                ipAddress: ip,
-                isAirplaneMode: airplane,
-            });
-        } catch (error) {
-            // Tratamento genérico caso ocorra falha no módulo de rede
-            setErrorMsg(
-                "Não foi possível obter as informações da rede."
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+```javascript
+setConectado(estado.isConnected);
+```
 
-    useEffect(() => {
-        carregaRede();
+Também podemos identificar o tipo de conexão:
 
-        // Adiciona um listener para atualizar as informações automaticamente quando o status da rede mudar
-        const subscription = Network.addNetworkStateListener(() => {
-            carregaRede();
-        });
+```javascript
+setTipoConexao(estado.type);
+```
 
-        return () => subscription.remove();
-    }, [carregaRede]);
+### Verificação da conexão
 
-    const isWifi = info?.type === Network.NetworkStateType.WIFI;
-    const tipoLabel = info?.type ?? "Indisponível";
-    const conexaoLabel = info?.isConnected ? "Conectado" : "Sem conexão";
-    const internetLabel = info?.isInternetReachable ? "Disponível" : "Indisponível";
-    const modoAviaoLabel = info?.isAirplaneMode ? "Ativado" : "Desativado";
+![Estado da conexão](./assets/Captura%20de%20tela%202026-08-31%20160425.png)
+
+---
+
+## 4. Identificando o tipo de conexão
+
+A propriedade `type` informa o tipo de conexão utilizada pelo dispositivo.
+
+Alguns exemplos são:
+
+* Wi-Fi
+* Dados móveis
+* Ethernet
+* Nenhuma conexão
+
+No projeto, essa informação é utilizada para apresentar ao usuário qual é o tipo de rede utilizado.
+
+Exemplo:
+
+```javascript
+const estado = await Network.getNetworkStateAsync();
+
+if (estado.isConnected) {
+    setTipoConexao(estado.type);
+} else {
+    setTipoConexao('Sem conexão');
 }
 ```
 
-## 4. Resultado Visual (Telas do App)
+---
 
-O aplicativo responde dinamicamente dependendo da conexão do dispositivo.
+## 5. Tratamento de erros
 
-**1. Aparelho Conectado ao Wi-Fi:**
-![Status Conectado](./assets/Captura%20de%20tela%202026-08-31%20153559.png)
+Também foi utilizado `try/catch` para tratar possíveis erros durante a consulta das informações da rede.
 
-**2. Aparelho Desconectado (Modo Avião/Offline):**
-![Status Offline](./assets/Captura%20de%20tela%202026-08-31%20160425.png)
+```javascript
+try {
+    const estado = await Network.getNetworkStateAsync();
+
+    setConectado(estado.isConnected);
+
+    if (estado.isConnected) {
+        setTipoConexao(estado.type);
+    } else {
+        setTipoConexao('Sem conexão');
+    }
+
+} catch (error) {
+    setErro('Não foi possível verificar a conexão.');
+}
+```
+
+Dessa forma, caso aconteça algum problema durante a consulta, o aplicativo consegue apresentar uma mensagem para o usuário.
+
+---
+
+## 6. Resultado
+
+Depois de executar o aplicativo, as informações sobre a conexão podem ser apresentadas na tela.
+
+Exemplo:
+
+```text
+Conectado: Sim
+Tipo de conexão: Wi-Fi
+```
+
+Caso não exista conexão:
+
+```text
+Conectado: Não
+Tipo de conexão: Sem conexão
+```
+
+### Aplicativo funcionando
+
+![Aplicativo funcionando](./assets/Captura%20de%20tela%202026-08-31%20153559.png)
+
+---
+
+## Conclusão
+
+A biblioteca `expo-network` permite consultar informações da rede de forma simples dentro de uma aplicação Expo.
+
+Durante a atividade, foi possível aprender como:
+
+* Instalar a biblioteca;
+* Importar o `expo-network`;
+* Verificar se o dispositivo está conectado;
+* Identificar o tipo de conexão;
+* Utilizar funções assíncronas;
+* Tratar possíveis erros;
+* Apresentar as informações da rede na aplicação.
